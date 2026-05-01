@@ -6,59 +6,101 @@
     <title>WorthMyTime | O custo real das coisas</title>
     <style>
         :root {
-            --primary: #6366f1;
-            --bg: #0f172a;
-            --card-bg: #1e293b;
-            --text: #f8fafc;
+            --bg-body: #f3f4f6; /* Cinza bem claro para o fundo da página */
+            --bg-card: #ffffff; /* Fundo branco para o container */
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --primary: #10b981; /* Verde Esmeralda principal */
+            --border: #e5e7eb;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
         }
 
         .container {
-            background-color: var(--card-bg);
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            background-color: var(--bg-card);
+            padding: 2.5rem;
+            border-radius: 1.25rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
         }
 
-        h1 { text-align: center; color: var(--primary); margin-bottom: 1.5rem; }
+        h1 { 
+            text-align: center; 
+            color: var(--primary); 
+            margin-top: 0;
+            margin-bottom: 1.8rem; 
+            font-weight: 800;
+            font-size: 2rem;
+        }
 
-        .input-group { margin-bottom: 1rem; }
+        .input-group { margin-bottom: 1.2rem; }
 
-        label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: #94a3b8; }
+        label { 
+            display: block; 
+            margin-bottom: 0.5rem; 
+            font-size: 0.9rem; 
+            color: var(--text-muted); 
+            font-weight: 600;
+        }
 
         input {
             width: 100%;
-            padding: 0.75rem;
+            padding: 0.85rem;
             border-radius: 0.5rem;
-            border: 1px solid #334155;
-            background: #0f172a;
-            color: white;
+            border: 1px solid var(--border);
+            background: #f9fafb;
+            color: var(--text-main);
             font-size: 1rem;
             box-sizing: border-box;
+            transition: all 0.2s ease;
+        }
+
+        /* Efeito de foco ao clicar no input (Borda verde) */
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+            background: #ffffff;
         }
 
         .result-card {
             margin-top: 2rem;
+            background: #ecfdf5; /* Fundo verde clarinho */
+            border: 1px solid #a7f3d0;
             padding: 1.5rem;
-            background: var(--primary);
-            border-radius: 0.5rem;
+            border-radius: 0.75rem;
             text-align: center;
             display: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
 
-        #time-result { font-size: 2rem; font-weight: bold; display: block; }
+        #time-result { 
+            font-size: 2.2rem; 
+            font-weight: 800; 
+            color: #047857; /* Texto verde escuro */
+            display: block; 
+        }
+
+        .sub-text {
+            font-size: 0.9rem;
+            color: #065f46;
+            margin-top: 5px;
+            display: block;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -67,8 +109,8 @@
     <h1>WorthMyTime</h1>
     
     <div class="input-group">
-        <label>Seu Salário Líquido (R$)</label>
-        <input type="number" id="salary" placeholder="Ex: 3000">
+        <label>Seu Salário Líquido Mensal (R$)</label>
+        <input type="number" id="salary" placeholder="Ex: 3500">
     </div>
 
     <div class="input-group">
@@ -78,19 +120,19 @@
 
     <div class="input-group">
         <label>Preço do Produto (R$)</label>
-        <input type="number" id="productPrice" placeholder="Ex: 200">
+        <input type="number" id="productPrice" placeholder="Ex: 1200">
     </div>
 
     <div id="resultArea" class="result-card">
-        <small>Isso vai te custar aproximadamente:</small>
         <span id="time-result">0 horas</span>
-        <small id="days-info"></small>
+        <span class="sub-text" id="days-info">do seu tempo de vida</span>
     </div>
 </div>
 
 <script>
     const inputs = ['salary', 'hoursWeek', 'productPrice'];
     
+    // Adiciona o evento para calcular automaticamente sempre que o usuário digitar algo
     inputs.forEach(id => {
         document.getElementById(id).addEventListener('input', calculate);
     });
@@ -101,13 +143,14 @@
         const price = parseFloat(document.getElementById('productPrice').value);
 
         if (salary > 0 && hoursWeek > 0 && price > 0) {
-            // Lógica
+            // Lógica matemática
             const monthlyHours = hoursWeek * 4.33;
             const hourlyRate = salary / monthlyHours;
             const totalHoursNeeded = price / hourlyRate;
 
             displayResult(totalHoursNeeded);
         } else {
+            // Esconde a caixa de resultado se faltar algum número
             document.getElementById('resultArea').style.display = 'none';
         }
     }
@@ -120,12 +163,14 @@
         resultArea.style.display = 'block';
 
         if (hours < 1) {
-            timeResult.innerText = `${(hours * 60).toFixed(0)} minutos`;
+            timeResult.innerText = `${(hours * 60).toFixed(0)} Minutos`;
+            daysInfo.innerText = "do seu tempo de vida";
         } else if (hours < 24) {
-            timeResult.innerText = `${hours.toFixed(1)} horas`;
+            timeResult.innerText = `${hours.toFixed(1)} Horas`;
+            daysInfo.innerText = "do seu tempo de vida";
         } else {
             const days = (hours / 8).toFixed(1); // Considerando jornada de 8h
-            timeResult.innerText = `${hours.toFixed(0)} horas`;
+            timeResult.innerText = `${hours.toFixed(0)} Horas`;
             daysInfo.innerText = `Ou aprox. ${days} dias úteis de trabalho.`;
         }
     }
