@@ -1,11 +1,135 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>WorthMyTime | O custo real das coisas</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 { text-align: center; color: var(--primary); margin-bottom: 1.5rem; }
+
+        .input-group { margin-bottom: 1rem; }
+
+        label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: #94a3b8; }
+
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: white;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        .result-card {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: var(--primary);
+            border-radius: 0.5rem;
+            text-align: center;
+            display: none;
+        }
+
+        #time-result { font-size: 2rem; font-weight: bold; display: block; }
+    </style>
 </head>
 <body>
+
+<div class="container">
+    <h1>WorthMyTime</h1>
     
+    <div class="input-group">
+        <label>Seu Salário Líquido (R$)</label>
+        <input type="number" id="salary" placeholder="Ex: 3000">
+    </div>
+
+    <div class="input-group">
+        <label>Horas de trabalho por semana</label>
+        <input type="number" id="hoursWeek" placeholder="Ex: 44">
+    </div>
+
+    <div class="input-group">
+        <label>Preço do Produto (R$)</label>
+        <input type="number" id="productPrice" placeholder="Ex: 200">
+    </div>
+
+    <div id="resultArea" class="result-card">
+        <small>Isso vai te custar aproximadamente:</small>
+        <span id="time-result">0 horas</span>
+        <small id="days-info"></small>
+    </div>
+</div>
+
+<script>
+    const inputs = ['salary', 'hoursWeek', 'productPrice'];
+    
+    inputs.forEach(id => {
+        document.getElementById(id).addEventListener('input', calculate);
+    });
+
+    function calculate() {
+        const salary = parseFloat(document.getElementById('salary').value);
+        const hoursWeek = parseFloat(document.getElementById('hoursWeek').value);
+        const price = parseFloat(document.getElementById('productPrice').value);
+
+        if (salary > 0 && hoursWeek > 0 && price > 0) {
+            // Lógica
+            const monthlyHours = hoursWeek * 4.33;
+            const hourlyRate = salary / monthlyHours;
+            const totalHoursNeeded = price / hourlyRate;
+
+            displayResult(totalHoursNeeded);
+        } else {
+            document.getElementById('resultArea').style.display = 'none';
+        }
+    }
+
+    function displayResult(hours) {
+        const resultArea = document.getElementById('resultArea');
+        const timeResult = document.getElementById('time-result');
+        const daysInfo = document.getElementById('days-info');
+
+        resultArea.style.display = 'block';
+
+        if (hours < 1) {
+            timeResult.innerText = `${(hours * 60).toFixed(0)} minutos`;
+        } else if (hours < 24) {
+            timeResult.innerText = `${hours.toFixed(1)} horas`;
+        } else {
+            const days = (hours / 8).toFixed(1); // Considerando jornada de 8h
+            timeResult.innerText = `${hours.toFixed(0)} horas`;
+            daysInfo.innerText = `Ou aprox. ${days} dias úteis de trabalho.`;
+        }
+    }
+</script>
+
 </body>
 </html>
