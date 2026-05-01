@@ -48,7 +48,6 @@
 
         .input-group { margin-bottom: 1.2rem; }
 
-        /* Estilo para colocar os seletores lado a lado */
         .row {
             display: flex;
             gap: 15px;
@@ -83,6 +82,12 @@
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
             background: #ffffff;
+        }
+
+        input:disabled {
+            background: #e5e7eb;
+            color: #9ca3af;
+            cursor: not-allowed;
         }
 
         .result-card {
@@ -132,7 +137,7 @@
                 <option value="auto">Automático</option>
                 <option value="minutes">Minutos</option>
                 <option value="hours">Horas</option>
-                <option value="days">Dias (8h)</option>
+                <option value="days">Dias de Trab.</option>
             </select>
         </div>
     </div>
@@ -142,9 +147,20 @@
         <input type="number" id="salary" placeholder="Ex: 3500">
     </div>
 
-    <div class="input-group">
-        <label>Horas de trabalho por semana</label>
-        <input type="number" id="hoursWeek" placeholder="Ex: 44">
+    <div class="row">
+        <div class="col" style="flex: 1.5;">
+            <label>Escala de Trabalho</label>
+            <select id="workScale">
+                <option value="5x2">5x2 (5 dias trab.)</option>
+                <option value="6x1">6x1 (6 dias trab.)</option>
+                <option value="12x36">12x36 (Plantão)</option>
+                <option value="custom">Personalizada</option>
+            </select>
+        </div>
+        <div class="col" style="flex: 1;">
+            <label id="labelTimeInput">Horas por dia</label>
+            <input type="number" id="timeInput" placeholder="Ex: 8">
+        </div>
     </div>
 
     <div class="input-group">
@@ -159,46 +175,84 @@
 </div>
 
 <script>
-    const inputs = ['salary', 'hoursWeek', 'productPrice', 'currency', 'timeFormat'];
+    const inputs = ['salary', 'timeInput', 'productPrice', 'currency', 'timeFormat', 'workScale'];
     
-    // Escuta mudanças em TODOS os campos (inputs e selects)
+    // Escuta mudanças
     inputs.forEach(id => {
         document.getElementById(id).addEventListener('input', updateInterfaceAndCalculate);
     });
 
+    // Função para adaptar o campo de horas com base na escala
+    function handleScaleChange() {
+        const scale = document.getElementById('workScale').value;
+        const timeInputLabel = document.getElementById('labelTimeInput');
+        const timeInput = document.getElementById('timeInput');
+
+        if (scale === '12x36') {
+            timeInputLabel.innerText = "Por plantão";
+            timeInput.value = 12; // Trava em 12 horas
+            timeInput.disabled = true;
+        } else if (scale === 'custom') {
+            timeInputLabel.innerText = "Horas na semana";
+            timeInput.placeholder = "Ex: 44";
+            timeInput.disabled = false;
+        } else {
+            timeInputLabel.innerText = "Horas por dia";
+            timeInput.placeholder = "Ex: 8";
+            timeInput.disabled = false;
+        }
+    }
+
+    // Escuta mudança específica na escala para rodar a adaptação visual
+    document.getElementById('workScale').addEventListener('change', handleScaleChange);
+
     function updateInterfaceAndCalculate() {
-        // 1. Atualiza as labels de moeda dinamicamente
+        // Atualiza moedas
         const currencySymbol = document.getElementById('currency').value;
         document.getElementById('labelSalary').innerText = `Seu Salário Mensal (${currencySymbol})`;
         document.getElementById('labelPrice').innerText = `Preço do Produto (${currencySymbol})`;
 
-        // 2. Coleta os valores numéricos
         const salary = parseFloat(document.getElementById('salary').value);
-        const hoursWeek = parseFloat(document.getElementById('hoursWeek').value);
+        const timeValue = parseFloat(document.getElementById('timeInput').value);
         const price = parseFloat(document.getElementById('productPrice').value);
         const format = document.getElementById('timeFormat').value;
+        const scale = document.getElementById('workScale').value;
 
-        // 3. Executa o cálculo
-        if (salary > 0 && hoursWeek > 0 && price > 0) {
-            const monthlyHours = hoursWeek * 4.33;
+        if (salary > 0 && timeValue > 0 && price > 0) {
+            let monthlyHours = 0;
+
+            // Matemática precisa baseada na escala (4.33 semanas por mês)
+            if (scale === '12x36') {
+                monthlyHours = 180; // Média de 15 plantões de 12h
+            } else if (scale === '5x2') {
+                monthlyHours = (timeValue * 5) * 4.33; 
+            } else if (scale === '6x1') {
+                monthlyHours = (timeValue * 6) * 4.33;
+            } else if (scale === 'custom') {
+                monthlyHours = timeValue * 4.33; // Comportamento antigo
+            }
+
             const hourlyRate = salary / monthlyHours;
             const totalHoursNeeded = price / hourlyRate;
 
-            displayResult(totalHoursNeeded, format);
+            // Passamos timeValue (horas por dia) para calcular dias exatos depois
+            displayResult(totalHoursNeeded, format, scale, timeValue);
         } else {
             document.getElementById('resultArea').style.display = 'none';
         }
     }
 
-    function displayResult(hours, format) {
+    function displayResult(hours, format, scale, hoursPerDay) {
         const resultArea = document.getElementById('resultArea');
         const timeResult = document.getElementById('time-result');
         const daysInfo = document.getElementById('days-info');
 
         resultArea.style.display = 'block';
-        daysInfo.innerText = "do seu tempo de vida"; // Reset padrão
+        daysInfo.innerText = "do seu tempo de vida"; 
 
-        // Lógica de exibição baseada na escolha do usuário
+        // Define divisor para calcular "dias". Se for semanal (custom), usa 8h como padrão.
+        const dailyDivisor = (scale === 'custom') ? 8 : hoursPerDay;
+
         if (format === 'minutes') {
             timeResult.innerText = `${(hours * 60).toFixed(0)} Minutos`;
         } 
@@ -206,20 +260,19 @@
             timeResult.innerText = `${hours.toFixed(1)} Horas`;
         } 
         else if (format === 'days') {
-            const days = (hours / 8).toFixed(1);
+            const days = (hours / dailyDivisor).toFixed(1);
             timeResult.innerText = `${days} Dias`;
-            daysInfo.innerText = "úteis de trabalho (8h/dia)";
+            daysInfo.innerText = `úteis de trabalho (${dailyDivisor}h/dia)`;
         } 
         else {
-            // Modo Automático (comportamento original)
             if (hours < 1) {
                 timeResult.innerText = `${(hours * 60).toFixed(0)} Minutos`;
             } else if (hours < 24) {
                 timeResult.innerText = `${hours.toFixed(1)} Horas`;
             } else {
-                const days = (hours / 8).toFixed(1);
+                const days = (hours / dailyDivisor).toFixed(1);
                 timeResult.innerText = `${hours.toFixed(0)} Horas`;
-                daysInfo.innerText = `Ou aprox. ${days} dias úteis (8h/dia).`;
+                daysInfo.innerText = `Ou aprox. ${days} dias úteis (${dailyDivisor}h/dia).`;
             }
         }
     }
