@@ -378,7 +378,7 @@
             <div class="card" style="text-align: center; padding: 50px 20px;">
                 <h3 style="margin-top: 0;">Disponível para Google Chrome</h3>
                 <p style="color: var(--text-muted);">Suporta Amazon, Mercado Livre, Shopee e AliExpress.</p>
-                <button class="btn" style="max-width: 250px; margin-top: 20px;">Instalar Extensão (Grátis)</button>
+                <button class="btn" style="max-width: 250px; margin-top: 20px;"><a href="https://github.com/igorgmnzmonte/WorthMyTimeExtension" target="_blank">Teste já nossa extensão</a></button>
             </div>
         </section>
 
@@ -407,41 +407,51 @@
             formatoSelectors: document.querySelectorAll('.sync-formato')
         };
 
+        let currentFormato = 'horas';
+
         function getCurrentFormato() {
-            return document.querySelector('.sync-formato').value || 'horas';
+            return currentFormato;
         }
 
         syncInputs.formatoSelectors.forEach(select => {
             select.addEventListener('change', (e) => {
-                const val = e.target.value;
-                syncInputs.formatoSelectors.forEach(s => s.value = val);
+                currentFormato = e.target.value;
+                syncInputs.formatoSelectors.forEach(s => s.value = currentFormato);
                 updateAllCalculations();
             });
         });
 
-        function getHourlyWage() {
-            const salary = parseFloat(syncInputs.salary.value) || 0;
+        // Inicializa currentFormato com o valor padrão do primeiro selector - feito no bloco de inicialização abaixo
+
+        function getMonthlyHours() {
             const escala = syncInputs.escala.value;
             const jornada = parseFloat(syncInputs.jornada.value) || 8;
+            if (escala === '12x36') {
+                // Ciclo de 48h (12h trabalhadas + 36h de descanso)
+                // Em 30 dias: 30/2 = 15 turnos de trabalho de 12h = 180h/mês
+                // Mas usamos a jornada informada pelo usuário (geralmente 12h)
+                return (30 / 2) * jornada;
+            } else if (escala === '6x1') {
+                // Ciclo de 7 dias: 6 dias trabalhados, 1 de folga
+                return (30 / 7) * 6 * jornada;
+            } else {
+                // 5x2: ciclo de 7 dias, 5 trabalhados
+                return (30 / 7) * 5 * jornada;
+            }
+        }
+
+        function getHourlyWage() {
+            const salary = parseFloat(syncInputs.salary.value) || 0;
             if (!salary) return 0;
-            let workDays = 5, freeDays = 2;
-            if (escala === '6x1') { workDays = 6; freeDays = 1; }
-            else if (escala === '12x36') { workDays = 1; freeDays = 1; }
-            const cycleDays = workDays + freeDays;
-            const totalHoursPerMonth = (30 / cycleDays) * workDays * jornada;
-            return salary / totalHoursPerMonth;
+            return salary / getMonthlyHours();
         }
 
         function formatTime(totalHours, labelSuffix = "") {
             const formato = getCurrentFormato();
             const jornada = parseFloat(syncInputs.jornada.value) || 8;
-            
+
             if (formato === 'meses') {
-                const escala = syncInputs.escala.value;
-                let workDays = 5, freeDays = 2;
-                if (escala === '6x1') { workDays = 6; freeDays = 1; }
-                else if (escala === '12x36') { workDays = 1; freeDays = 1; }
-                const totalHoursPerMonth = (30 / (workDays + freeDays)) * workDays * jornada;
+                const totalHoursPerMonth = getMonthlyHours();
                 return `${(totalHours / totalHoursPerMonth).toFixed(1)} meses${labelSuffix}`;
             } else if (formato === 'dias') {
                 return `${(totalHours / jornada).toFixed(1)} dias${labelSuffix}`;
@@ -535,11 +545,15 @@
                 // Tabela Price (Juros Compostos)
                 const pmt = principal * (rate * Math.pow(1 + rate, installments)) / (Math.pow(1 + rate, installments) - 1);
                 totalPaid = (pmt * installments) + downPayment;
+            } else if (rate > 0 && principal === 0) {
+                // Pagou tudo na entrada, sem financiamento
+                totalPaid = downPayment;
             } else {
+                // Sem juros: paga o valor cheio do bem
                 totalPaid = cashPrice;
             }
 
-            const totalInterest = totalPaid - cashPrice;
+            const totalInterest = Math.max(0, totalPaid - cashPrice);
 
             document.getElementById('fin-total-price').textContent = `R$ ${totalPaid.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             document.getElementById('fin-total-interest').textContent = `R$ ${totalInterest.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
@@ -582,8 +596,10 @@
             const hoursY = (totalM * 12) / hWage;
             
             document.getElementById('total-sub-time').textContent = formatTime(hoursY);
-            let timeLabel = getCurrentFormato() === 'dias' ? "trabalhados por ano" : "trabalhadas por ano";
-            if (getCurrentFormato() === 'meses') timeLabel = "trabalhados por ano";
+            const formato = getCurrentFormato();
+            let timeLabel = "horas trabalhadas por ano";
+            if (formato === 'dias') timeLabel = "dias trabalhados por ano";
+            if (formato === 'meses') timeLabel = "meses trabalhados por ano";
             document.getElementById('sub-time-label').textContent = timeLabel;
             
             document.getElementById('sub-cost-money').textContent = `Custo total: R$ ${(totalM*12).toLocaleString('pt-BR', {minimumFractionDigits: 2})} / ano`;
@@ -600,6 +616,9 @@
         });
 
         // Inicialização
+        // Sincroniza todos os seletores de formato para 'horas' ao carregar
+        currentFormato = 'horas';
+        syncInputs.formatoSelectors.forEach(s => s.value = 'horas');
         renderSubs();
         updateAllCalculations();
     </script>
