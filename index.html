@@ -196,11 +196,11 @@
         main {
             flex: 1;
             overflow-y: auto;
-            padding: 0 48px 48px;
+            padding: 32px 48px 48px;
             background: var(--bg);
         }
 
-        .tab-content { display: none; max-width: 860px; margin: 0 auto; padding-top: 28px; }
+        .tab-content { display: none; max-width: 860px; margin: 0 auto; }
         .tab-content.active {
             display: block;
             animation: fadeUp 0.28s cubic-bezier(0.22, 1, 0.36, 1);
@@ -680,19 +680,11 @@
            PROFILE BANNER
            ========================================= */
         .profile-banner {
-            position: sticky;
-            top: 0;
-            z-index: 5;
             background: var(--bg-2);
-            backdrop-filter: blur(12px);
             border: 1px solid var(--border);
             border-radius: var(--radius-lg);
             padding: 20px 24px;
-            margin-bottom: 0;
-            border-bottom: 1px solid var(--border);
-            border-radius: 0;
-            border-left: none;
-            border-right: none;
+            margin-bottom: 24px;
             display: flex;
             align-items: center;
             gap: 20px;
@@ -709,7 +701,8 @@
         .profile-banner .input-grid {
             flex: 1;
             margin-bottom: 0;
-            min-width: 300px;
+            min-width: 280px;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
         }
         .profile-banner .input-col { margin-bottom: 0; }
 
@@ -802,10 +795,6 @@
            RESPONSIVE
            ========================================= */
         @media (max-width: 768px) {
-            .profile-banner {
-                padding-top: 68px; /* space for hamburger */
-                border-radius: 0;
-            }
             body {
                 overflow: auto;
                 flex-direction: column;
@@ -832,7 +821,7 @@
             }
 
             main {
-                padding: 72px 20px 40px;
+                padding: 68px 20px 40px;
                 overflow-y: visible;
                 height: auto;
             }
@@ -861,11 +850,9 @@
             }
 
             .profile-banner {
-            position: sticky;
-            top: 0;
-            z-index: 5;
                 flex-direction: column;
                 align-items: flex-start;
+                border-radius: var(--radius-lg);
             }
 
             .profile-banner .input-grid {
@@ -899,7 +886,7 @@
         }
 
         @media (max-width: 420px) {
-            main { padding: 68px 16px 32px; }
+            main { padding: 64px 16px 32px; }
             .page-title { font-size: 1.35rem; }
             .result-number { font-size: 1.9rem; }
             .impact-number { font-size: 2.4rem; }
